@@ -1,0 +1,30 @@
+{
+  "users": {
+    "U_001": {
+      "name": "Tuấn VIP",
+      "ltv_vnd": 15000000,
+      "rank": "VIP"
+    },
+    "U_002": {
+      "name": "Mai Thường",
+      "ltv_vnd": 200000,
+      "rank": "NORMAL"
+    }
+  },
+  "warehouses": {
+    "WH_HCM": {
+      "name": "Kho Quận 1 (HCM)",
+      "gift_stock": 0,
+      "confidence_score": 0.42,
+      "last_sync_mins": 90
+    },
+    "WH_HN": {
+      "name": "Kho Đống Đa (HN)",
+      "gift_stock": 50,
+      "confidence_score": 0.98,
+      "last_sync_mins": 5
+    }
+  },
+  "orders_saved": 2,
+  "commission_rescued_vnd": 20000
+}
