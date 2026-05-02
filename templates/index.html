@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShopNow — LogiGift AI Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --p:#ee4d2d;--pl:#fff3f0;--pd:#c73e24;
+  --gold:#f5a623;--gl:#fffbf0;
+  --green:#26aa61;--grl:#f0faf4;
+  --blue:#1890ff;--bl:#e6f4ff;
+  --g0:#fff;--g1:#fafafa;--g2:#f5f5f5;--g3:#eeeeee;
+  --g4:#e0e0e0;--g5:#9e9e9e;--g6:#757575;--g7:#424242;--g8:#212121;
+  --sh:0 2px 8px rgba(0,0,0,.10);--r:8px;
+}
+body{font-family:'Inter',sans-serif;background:var(--g2);color:var(--g8);font-size:14px;line-height:1.5;min-height:100vh;}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--p);position:sticky;top:0;z-index:200;box-shadow:0 2px 10px rgba(238,77,45,.35);}
+.tb-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:10px 20px;}
+.logo{color:#fff;font-size:20px;font-weight:800;letter-spacing:-.5px;flex-shrink:0;}
+.logo em{opacity:.75;font-style:normal;font-weight:300;}
+.searchbar{flex:1;display:flex;background:#fff;border-radius:4px;overflow:hidden;max-width:520px;}
+.searchbar input{flex:1;border:none;padding:8px 12px;font-size:13px;outline:none;font-family:inherit;color:var(--g7);}
+.searchbar button{background:var(--p);border:none;padding:8px 14px;cursor:pointer;color:#fff;display:flex;align-items:center;}
+.tb-icons{display:flex;gap:18px;color:#fff;font-size:11px;flex-shrink:0;}
+.tb-icon{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;opacity:.9;}
+.tb-icon:hover{opacity:1;}
+
+/* ── BREADCRUMB ── */
+.bc{background:#fff;border-bottom:1px solid var(--g3);}
+.bc-inner{max-width:1100px;margin:0 auto;padding:8px 20px;font-size:12px;color:var(--g5);display:flex;gap:5px;align-items:center;}
+.bc-inner a{color:var(--g5);text-decoration:none;}
+.bc-inner a:hover{color:var(--p);}
+
+/* ── PAGE LAYOUT ── */
+.page{max-width:1100px;margin:18px auto;padding:0 20px;display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start;}
+@media(max-width:860px){.page{grid-template-columns:1fr;}}
+
+/* ── PRODUCT CARD ── */
+.pcard{background:#fff;border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;}
+
+/* STEP HEADER — progress indicator */
+.step-bar{display:flex;border-bottom:1px solid var(--g3);overflow:hidden;}
+.step{flex:1;padding:12px 8px;text-align:center;font-size:11px;font-weight:600;color:var(--g5);border-bottom:2px solid transparent;transition:.2s;cursor:default;}
+.step.active{color:var(--p);border-bottom-color:var(--p);}
+.step.done{color:var(--green);}
+.step span{display:block;font-size:16px;margin-bottom:2px;}
+
+/* STEP PANELS */
+.step-panel{display:none;padding:24px;}
+.step-panel.active{display:block;}
+
+/* ── STEP 1: CUSTOMER SELECT ── */
+.s1-title{font-size:16px;font-weight:700;margin-bottom:6px;}
+.s1-sub{font-size:13px;color:var(--g5);margin-bottom:20px;}
+.user-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+.user-card{border:2px solid var(--g3);border-radius:12px;padding:16px;cursor:pointer;transition:.2s;position:relative;}
+.user-card:hover{border-color:var(--gold);transform:translateY(-1px);}
+.user-card.selected{border-color:var(--gold);background:var(--gl);}
+.user-card .avatar{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:10px;}
+.avatar-vip{background:linear-gradient(135deg,#ffd700,#f5a623);}
+.avatar-nor{background:var(--g3);}
+.user-name{font-size:14px;font-weight:700;margin-bottom:4px;}
+.user-meta{font-size:11px;color:var(--g5);line-height:1.6;}
+.tier-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:6px;}
+.tb-vip{background:var(--gold);color:#fff;}
+.tb-nor{background:var(--g4);color:var(--g6);}
+.selected-mark{position:absolute;top:10px;right:10px;width:20px;height:20px;border-radius:50%;background:var(--gold);color:#fff;font-size:11px;display:none;align-items:center;justify-content:center;}
+.user-card.selected .selected-mark{display:flex;}
+
+/* ── STEP 2: PRODUCT + GIFT ── */
+.product-hero{display:flex;gap:20px;margin-bottom:20px;}
+.prod-img{width:120px;height:120px;background:linear-gradient(135deg,#fce4dc,#fff0ed);border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.prod-info{flex:1;}
+.prod-shop{font-size:11px;color:var(--p);font-weight:600;margin-bottom:4px;}
+.mall-tag{background:var(--p);color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;margin-right:4px;}
+.prod-name{font-size:15px;font-weight:700;line-height:1.4;margin-bottom:8px;}
+.prod-price{font-size:22px;font-weight:800;color:var(--p);margin-bottom:4px;}
+.prod-price-orig{font-size:13px;color:var(--g5);text-decoration:line-through;margin-right:6px;}
+.disc{background:var(--p);color:#fff;font-size:10px;font-weight:700;padding:2px 5px;border-radius:3px;}
+.prod-stats{display:flex;gap:12px;font-size:12px;color:var(--g5);}
+.stars{color:#f5a623;}
+
+/* GIFT SELECTOR */
+.gift-section-label{font-size:13px;font-weight:700;color:var(--g7);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.gift-count-badge{background:var(--gold);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;}
+.gift-wh-note{font-size:11px;color:var(--g5);font-weight:400;}
+.gift-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
+.gift-card{border:2px solid var(--g3);border-radius:10px;padding:12px;cursor:pointer;transition:.2s;text-align:center;position:relative;}
+.gift-card:hover{border-color:var(--p);}
+.gift-card.selected{border-color:var(--p);background:var(--pl);}
+.gift-emoji{font-size:28px;margin-bottom:6px;}
+.gift-name{font-size:11px;font-weight:600;line-height:1.4;margin-bottom:4px;}
+.gift-wh{font-size:10px;color:var(--g5);}
+.gift-wh-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px;vertical-align:middle;}
+.dot-hcm{background:#ee4d2d;}
+.dot-dn{background:#1890ff;}
+.gift-stock-ok{color:var(--green);}
+.gift-stock-warn{color:#e65100;}
+.gift-stock-out{color:#c62828;}
+.gift-sel-mark{position:absolute;top:6px;right:6px;width:18px;height:18px;border-radius:50%;background:var(--p);color:#fff;font-size:10px;display:none;align-items:center;justify-content:center;}
+.gift-card.selected .gift-sel-mark{display:flex;}
+
+/* WAREHOUSE SELECTOR */
+.wh-label{font-size:13px;font-weight:700;color:var(--g7);margin-bottom:10px;}
+.wh-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.wh-card{border:2px solid var(--g3);border-radius:10px;padding:12px 14px;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:10px;}
+.wh-card:hover{border-color:var(--blue);}
+.wh-card.selected{border-color:var(--blue);background:var(--bl);}
+.wh-icon{font-size:22px;}
+.wh-name{font-size:13px;font-weight:700;}
+.wh-loc{font-size:11px;color:var(--g5);}
+.wh-sel-mark{margin-left:auto;width:18px;height:18px;border-radius:50%;background:var(--blue);color:#fff;font-size:10px;display:none;align-items:center;justify-content:center;}
+.wh-card.selected .wh-sel-mark{display:flex;}
+
+/* GIFT CONFLICT HINT */
+.conflict-hint{display:none;padding:10px 12px;border-radius:8px;font-size:12px;margin-bottom:16px;align-items:flex-start;gap:8px;}
+.conflict-hint.show{display:flex;}
+.ch-warn{background:#fff3cd;border:1px solid #ffc107;color:#856404;}
+.ch-ok{background:var(--grl);border:1px solid #b7e4c7;color:var(--green);}
+.ch-danger{background:#f8d7da;border:1px solid #f5c2c7;color:#842029;}
+
+.btn-next{width:100%;padding:13px;border-radius:var(--r);border:none;background:var(--p);color:#fff;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:.2s;margin-top:4px;}
+.btn-next:hover{background:var(--pd);}
+.btn-next:disabled{opacity:.45;cursor:not-allowed;}
+.btn-back{background:none;border:none;color:var(--p);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:0;margin-bottom:16px;display:flex;align-items:center;gap:4px;}
+
+/* ── STEP 3: ORDER SUMMARY ── */
+.summary-product{display:flex;gap:12px;padding:14px;background:var(--g1);border-radius:10px;margin-bottom:14px;}
+.sp-img{width:60px;height:60px;background:linear-gradient(135deg,#fce4dc,#fff0ed);border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.sp-info{flex:1;}
+.sp-name{font-size:13px;font-weight:600;line-height:1.4;margin-bottom:4px;}
+.sp-meta{font-size:11px;color:var(--g5);}
+.sp-price{font-size:14px;font-weight:700;color:var(--p);}
+.summary-gift{background:linear-gradient(90deg,#fffbf0,#fff8e6);border:1px solid #ffd988;border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:center;margin-bottom:14px;}
+.sg-emoji{font-size:24px;}
+.sg-info{flex:1;}
+.sg-name{font-size:12px;font-weight:700;}
+.sg-meta{font-size:11px;color:var(--g5);}
+.sg-price{font-size:13px;font-weight:700;color:var(--green);}
+.summary-rows{border-top:1px solid var(--g3);padding-top:10px;margin-bottom:16px;}
+.sr{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;}
+.sr.total{font-weight:800;font-size:16px;color:var(--p);border-top:1px dashed var(--g3);margin-top:6px;padding-top:10px;}
+.user-chip{display:flex;align-items:center;gap:8px;background:var(--gl);border:1px solid #ffd988;border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:12px;}
+.uc-avatar{font-size:18px;}
+.uc-info{flex:1;}
+.uc-name{font-weight:700;}
+.uc-tier{font-size:10px;color:var(--g5);}
+
+/* ── MODALS ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;display:none;align-items:flex-end;justify-content:center;}
+.overlay.show{display:flex;animation:fadeIn .2s;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* PROCESSING */
+.proc-box{background:#fff;border-radius:18px 18px 0 0;padding:28px 24px;width:100%;max-width:460px;text-align:center;}
+.ai-orb{width:68px;height:68px;margin:0 auto 14px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--gold));display:flex;align-items:center;justify-content:center;font-size:28px;animation:orb 1.2s ease-in-out infinite;}
+@keyframes orb{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(238,77,45,.4)}50%{transform:scale(1.06);box-shadow:0 0 0 14px rgba(238,77,45,0)}}
+.proc-title{font-size:16px;font-weight:700;margin-bottom:4px;}
+.proc-sub{font-size:12px;color:var(--g5);margin-bottom:18px;}
+.proc-steps{text-align:left;}
+.ps{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12px;color:var(--g5);transition:.3s;}
+.ps.done{color:var(--green);}
+.ps.active{color:var(--p);font-weight:600;}
+.ps-icon{width:20px;height:20px;border-radius:50%;background:var(--g3);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:.3s;}
+.ps.done .ps-icon{background:var(--green);color:#fff;}
+.ps.active .ps-icon{background:var(--p);color:#fff;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* POPUP */
+.popup{background:#fff;border-radius:18px 18px 0 0;width:100%;max-width:460px;overflow:hidden;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1);max-height:90vh;overflow-y:auto;}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+.handle{width:36px;height:4px;background:var(--g4);border-radius:2px;margin:10px auto 0;}
+
+/* Popup top bars */
+.popup-top-green{background:linear-gradient(135deg,var(--green),#16a34a);padding:22px;text-align:center;color:#fff;}
+.popup-top-warn{padding:18px 20px;display:flex;align-items:flex-start;gap:12px;border-bottom:1px solid var(--g3);}
+.popup-top-red{padding:20px;text-align:center;border-bottom:1px solid var(--g3);}
+.pop-icon-box{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.pib-green{background:rgba(38,170,97,.12);}
+.pib-warn{background:#fff3cd;}
+.pib-red{background:#fce4e4;}
+.pop-h{font-size:15px;font-weight:800;margin-bottom:3px;}
+.pop-s{font-size:12px;color:var(--g5);}
+.success-ring{width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:26px;animation:pop .4s cubic-bezier(.34,1.56,.64,1);}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+
+/* AI text */
+.ai-box{margin:12px 18px;padding:12px 14px;background:linear-gradient(135deg,#fff8e6,#fff3f0);border-left:3px solid var(--p);border-radius:0 8px 8px 0;font-size:13px;line-height:1.7;color:var(--g6);position:relative;}
+.ai-lbl{position:absolute;top:-10px;left:10px;background:linear-gradient(90deg,var(--p),var(--gold));color:#fff;font-size:9px;font-weight:800;letter-spacing:1px;padding:2px 8px;border-radius:10px;}
+.ai-loading{display:flex;align-items:center;gap:8px;color:var(--g5);font-size:12px;}
+.dots span{width:5px;height:5px;border-radius:50%;background:var(--p);display:inline-block;animation:db 1.2s ease-in-out infinite;}
+.dots span:nth-child(2){animation-delay:.2s;}.dots span:nth-child(3){animation-delay:.4s;}
+@keyframes db{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+
+/* Conf chips */
+.conf-row{display:flex;gap:8px;padding:10px 16px;background:var(--g1);border-bottom:1px solid var(--g3);}
+.conf-chip{flex:1;text-align:center;padding:8px 4px;background:#fff;border-radius:8px;border:1px solid var(--g3);}
+.conf-val{font-size:15px;font-weight:800;font-family:'SF Mono',monospace;}
+.conf-lbl{font-size:10px;color:var(--g5);margin-top:1px;}
+
+/* Offer options (from logic_engine offer_options list) */
+.offers-area{padding:12px 18px;}
+.offers-label{font-size:11px;font-weight:700;color:var(--g5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+.offer-btn{width:100%;padding:13px 16px;border-radius:10px;border:2px solid var(--g3);background:#fff;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left;transition:.2s;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.offer-btn:hover{border-color:var(--p);background:var(--pl);}
+.offer-btn.primary{border-color:var(--p);background:var(--pl);color:var(--p);}
+.offer-btn.primary:hover{background:#fde0d8;}
+.offer-btn.cancel{border-color:var(--g4);color:var(--g5);}
+.offer-btn.cancel:hover{background:var(--g2);}
+.mab-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0;}
+.mab-primary{background:var(--pl);color:var(--p);}
+.mab-secondary{background:var(--g2);color:var(--g5);}
+
+/* Upsell amount box */
+.upsell-box{margin:12px 18px;background:linear-gradient(135deg,#e6f4ff,#f0f9ff);border:1px solid #91d5ff;border-radius:10px;padding:14px;text-align:center;}
+.upsell-amount{font-size:26px;font-weight:800;color:var(--blue);}
+.upsell-lbl{font-size:12px;color:var(--g5);margin-top:3px;}
+
+/* Voucher big */
+.voucher-big{margin:12px 18px;background:linear-gradient(135deg,var(--p),var(--gold));color:#fff;border-radius:12px;padding:16px;text-align:center;}
+.vb-val{font-size:30px;font-weight:800;margin-bottom:4px;}
+.vb-lbl{font-size:12px;opacity:.9;}
+
+/* FINAL SUCCESS */
+.final-box{background:#fff;border-radius:18px 18px 0 0;width:100%;max-width:460px;padding:28px 22px;text-align:center;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1);}
+.final-check{width:72px;height:72px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:30px;color:#fff;animation:pop .5s cubic-bezier(.34,1.56,.64,1);}
+.final-title{font-size:20px;font-weight:800;margin-bottom:6px;}
+.final-sub{font-size:13px;color:var(--g5);margin-bottom:20px;line-height:1.6;}
+.kpis{display:flex;gap:8px;margin-bottom:20px;}
+.kpi{flex:1;background:var(--g1);border-radius:8px;padding:10px 6px;text-align:center;}
+.kpi-v{font-size:14px;font-weight:800;color:var(--p);}
+.kpi-l{font-size:10px;color:var(--g5);margin-top:2px;}
+.btn-restart{width:100%;padding:13px;border-radius:var(--r);border:none;background:var(--p);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;}
+
+/* RIGHT PANEL */
+.rpanel{background:#fff;border-radius:var(--r);box-shadow:var(--sh);position:sticky;top:68px;}
+.rp-header{padding:14px 16px;border-bottom:1px solid var(--g3);font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.rp-body{padding:16px;}
+.rp-section{margin-bottom:14px;}
+.rp-label{font-size:11px;font-weight:700;color:var(--g5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.rp-user-chip{display:flex;align-items:center;gap:8px;padding:10px;background:var(--gl);border:1px solid #ffd988;border-radius:8px;font-size:12px;}
+.rp-gift-chip{display:flex;align-items:center;gap:8px;padding:10px;background:var(--pl);border:1px solid #ffccc7;border-radius:8px;font-size:12px;}
+.rp-empty{color:var(--g5);font-size:12px;font-style:italic;}
+.rp-divider{border:none;border-top:1px solid var(--g3);margin:14px 0;}
+.rp-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;}
+.rp-total{font-weight:800;font-size:15px;color:var(--p);border-top:1px dashed var(--g3);margin-top:6px;padding-top:8px;}
+.btn-pay{width:100%;padding:13px;border-radius:var(--r);border:none;background:var(--p);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-top:12px;}
+.btn-pay:hover{background:var(--pd);}
+.btn-pay:disabled{opacity:.45;cursor:not-allowed;}
+.secure-note{text-align:center;font-size:11px;color:var(--g5);margin-top:8px;display:flex;align-items:center;justify-content:center;gap:4px;}
+
+.demo-bar{background:#1a1a2e;color:#fff;padding:8px 20px;text-align:center;font-size:12px;}
+.demo-bar strong{color:var(--gold);}
+</style>
+</head>
+<body>
+
+<div class="demo-bar">🎯 <strong>LogiGift AI Demo</strong> — Làm theo từng bước: <strong>①</strong> Chọn khách hàng → <strong>②</strong> Chọn kho & quà → <strong>③</strong> Xem AI xử lý</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-inner">
+    <div class="logo">Shop<em>Now</em></div>
+    <div class="searchbar">
+      <input value="kem dưỡng da loreal revitalift" readonly>
+      <button><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></button>
+    </div>
+    <div class="tb-icons">
+      <div class="tb-icon">🤍<span>Yêu thích</span></div>
+      <div class="tb-icon">🛒<span>Giỏ hàng</span></div>
+      <div class="tb-icon">👤<span>Tài khoản</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- BREADCRUMB -->
+<div class="bc"><div class="bc-inner">
+  <a href="#">Trang chủ</a> ›
+  <a href="#">Chăm sóc da</a> ›
+  <a href="#">Dưỡng ẩm</a> ›
+  <span style="color:var(--g7)">Kem dưỡng L'ORÉAL Revitalift</span>
+</div></div>
+
+<!-- MAIN PAGE -->
+<div class="page">
+
+  <!-- LEFT: PRODUCT CARD WITH STEPS -->
+  <div class="pcard">
+
+    <!-- Step bar -->
+    <div class="step-bar">
+      <div class="step active" id="stab0"><span>①</span>Khách hàng</div>
+      <div class="step" id="stab1"><span>②</span>Sản phẩm & Quà</div>
+      <div class="step" id="stab2"><span>③</span>Xác nhận</div>
+    </div>
+
+    <!-- ───── STEP 1: CHỌN KHÁCH HÀNG ───── -->
+    <div class="step-panel active" id="panel0">
+      <div class="s1-title">Bạn là ai?</div>
+      <div class="s1-sub">Chọn loại tài khoản để trải nghiệm luồng thanh toán tương ứng</div>
+      <div class="user-cards" id="userCards">
+        <!-- Filled by JS -->
+      </div>
+      <button class="btn-next" id="btnNext0" onclick="goStep(1)" disabled>Tiếp tục →</button>
+    </div>
+
+    <!-- ───── STEP 2: SẢN PHẨM + CHỌN KHO + CHỌN QUÀ ───── -->
+    <div class="step-panel" id="panel1">
+      <button class="btn-back" onclick="goStep(0)">← Quay lại</button>
+
+      <!-- Product info (fixed) -->
+      <div class="product-hero">
+        <div class="prod-img">
+          <svg width="90" height="90" viewBox="0 0 100 100">
+            <rect x="25" y="30" width="50" height="50" rx="10" fill="#fff8f6"/>
+            <rect x="25" y="30" width="50" height="20" rx="10" fill="#ee4d2d"/>
+            <rect x="25" y="42" width="50" height="8" fill="#ee4d2d"/>
+            <text x="50" y="40" text-anchor="middle" fill="#fff" font-size="6" font-weight="800" font-family="Inter">L'ORÉAL</text>
+            <text x="50" y="62" text-anchor="middle" fill="#c73e24" font-size="5" font-weight="700" font-family="Inter">REVITALIFT</text>
+            <text x="50" y="70" text-anchor="middle" fill="#bbb" font-size="4.5" font-family="Inter">SPF35 · 50ml</text>
+            <ellipse cx="50" cy="30" rx="25" ry="7" fill="#ffd8cc"/>
+          </svg>
+        </div>
+        <div class="prod-info">
+          <div class="prod-shop"><span class="mall-tag">Mall</span>lorealparis officialstore ✓</div>
+          <div class="prod-name">Kem dưỡng da L'ORÉAL Revitalift Day SPF35 PA++ 50ml</div>
+          <div>
+            <span class="prod-price-orig">₫379.000</span>
+            <span class="prod-price" style="display:inline;">₫349.000</span>
+            <span class="disc">-8%</span>
+          </div>
+          <div class="prod-stats" style="margin-top:6px;">
+            <span class="stars">★★★★★</span>
+            <span>5.0 · Đã bán 571</span>
+            <span style="color:var(--green);">✓ Chính hãng</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kho giao hàng -->
+      <div class="wh-label">🏭 Chọn kho giao hàng <span style="font-size:11px;color:var(--g5);font-weight:400;">(địa chỉ của bạn)</span></div>
+      <div class="wh-grid" id="whGrid"><!-- JS --></div>
+
+      <!-- Quà tặng -->
+      <div class="gift-section-label">
+        🎁 Chọn quà tặng kèm đơn
+        <span class="gift-count-badge">FREE</span>
+        <span class="gift-wh-note">— tự động kiểm tra kho</span>
+      </div>
+      <div class="gift-grid" id="giftGrid"><!-- JS --></div>
+
+      <!-- Conflict hint -->
+      <div class="conflict-hint" id="conflictHint"></div>
+
+      <button class="btn-next" id="btnNext1" onclick="goStep(2)" disabled>Xem đơn hàng →</button>
+    </div>
+
+    <!-- ───── STEP 3: XÁC NHẬN ───── -->
+    <div class="step-panel" id="panel2">
+      <button class="btn-back" onclick="goStep(1)">← Quay lại</button>
+      <div id="summaryContent"><!-- JS --></div>
+      <button class="btn-next" onclick="startCheckout()">🛒 Thanh toán ngay</button>
+    </div>
+
+  </div><!-- /pcard -->
+
+  <!-- RIGHT PANEL -->
+  <div class="rpanel">
+    <div class="rp-header">🛒 Tóm tắt đơn hàng</div>
+    <div class="rp-body">
+      <div class="rp-section">
+        <div class="rp-label">Khách hàng</div>
+        <div id="rpUser" class="rp-empty">Chưa chọn</div>
+      </div>
+      <div class="rp-section">
+        <div class="rp-label">Quà tặng</div>
+        <div id="rpGift" class="rp-empty">Chưa chọn</div>
+      </div>
+      <div class="rp-section">
+        <div class="rp-label">Kho giao</div>
+        <div id="rpWH" class="rp-empty">Chưa chọn</div>
+      </div>
+      <hr class="rp-divider">
+      <div class="rp-row"><span>Sản phẩm</span><span>₫349.000</span></div>
+      <div class="rp-row"><span>Quà tặng</span><span style="color:var(--green)">₫0</span></div>
+      <div class="rp-row"><span>Phí ship</span><span style="color:var(--green)">Miễn phí</span></div>
+      <div class="rp-row rp-total"><span>Tổng cộng</span><span>₫349.000</span></div>
+      <button class="btn-pay" id="rpBtnPay" onclick="startCheckout()" disabled>Thanh toán</button>
+      <div class="secure-note">🔒 LogiGift AI bảo vệ đơn hàng</div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<!-- ══ OVERLAYS ══ -->
+
+<!-- Processing -->
+<div class="overlay" id="ovProc">
+  <div class="proc-box">
+    <div class="ai-orb">🤖</div>
+    <div class="proc-title">LogiGift AI đang phân tích...</div>
+    <div class="proc-sub">Weighted Scoring Model · 4 tầng xử lý</div>
+    <div class="proc-steps">
+      <div class="ps" id="ps0"><div class="ps-icon">·</div><span>Tầng 1: Fetch WMS — ATP · CTP · PTP</span></div>
+      <div class="ps" id="ps1"><div class="ps-icon">·</div><span>Tầng 2: MAB Scoring — phân tích LTV khách hàng</span></div>
+      <div class="ps" id="ps2"><div class="ps-icon">·</div><span>Tầng 3: Platform Logic — check kho & backup</span></div>
+      <div class="ps" id="ps3"><div class="ps-icon">·</div><span>Tầng 4: Build JSON Response → UI Action</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Result Popup -->
+<div class="overlay" id="ovResult">
+  <div class="popup" id="popupBox"></div>
+</div>
+
+<!-- Final Success -->
+<div class="overlay" id="ovSuccess">
+  <div class="final-box">
+    <div class="final-check">✓</div>
+    <div class="final-title">Đặt hàng thành công! 🎉</div>
+    <div class="final-sub" id="finalMsg"></div>
+    <div class="kpis">
+      <div class="kpi"><div class="kpi-v">₫349.000</div><div class="kpi-l">Doanh thu giữ lại</div></div>
+      <div class="kpi"><div class="kpi-v" id="kpiComm">₫17.450</div><div class="kpi-l">Commission Rescued</div></div>
+      <div class="kpi"><div class="kpi-v" style="color:var(--green)">AI ✓</div><div class="kpi-l">Tự động 100%</div></div>
+    </div>
+    <button class="btn-restart" onclick="restart()">← Thử kịch bản khác</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+const S = {
+  userId: null, warehouseId: null, giftId: null,
+  userData: null, warehouseData: null, giftData: null,
+  dbUsers: {}, dbWarehouses: {}, dbProducts: {},
+  upsellThreshold: 50000,
+  lastResult: null
+};
+
+// ══════════════════════════════════════════
+// INIT — load DB from backend
+// ══════════════════════════════════════════
+async function init() {
+  const res = await fetch('/api/data');
+  const db  = await res.json();
+  S.dbUsers      = db.users;
+  S.dbWarehouses = db.warehouses;
+  S.dbProducts   = db.products;
+  S.upsellThreshold = db.upsell_threshold;
+  renderUsers();
+  renderWarehouses();
+  renderGifts();
+}
+
+// ══════════════════════════════════════════
+// RENDER USERS (Step 1)
+// ══════════════════════════════════════════
+function renderUsers() {
+  const grid = document.getElementById('userCards');
+  const icons = { 'USR-VIP-001': '👑', 'USR-NOR-002': '👤' };
+  const metas = {
+    'USR-VIP-001': 'LTV: 15,400,000đ · 47 đơn hàng<br>Ưu tiên tự động · Ship chéo miễn phí',
+    'USR-NOR-002': 'LTV: 890,000đ · 3 đơn hàng<br>Nhận đề xuất upsell khi có xung đột'
+  };
+  grid.innerHTML = Object.entries(S.dbUsers).map(([id, u]) => {
+    const isVip = u.membership_rank === 'VIP';
+    return `<div class="user-card" onclick="selectUser('${id}',this)" data-id="${id}">
+      <div class="selected-mark">✓</div>
+      <div class="avatar ${isVip?'avatar-vip':'avatar-nor'}">${icons[id]||'👤'}</div>
+      <div class="tier-badge ${isVip?'tb-vip':'tb-nor'}">${u.membership_rank}</div>
+      <div class="user-name">${u.name}</div>
+      <div class="user-meta">${metas[id]||''}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectUser(id, el) {
+  S.userId   = id;
+  S.userData = S.dbUsers[id];
+  document.querySelectorAll('.user-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('btnNext0').disabled = false;
+  updateRightPanel();
+}
+
+// ══════════════════════════════════════════
+// RENDER WAREHOUSES (Step 2)
+// ══════════════════════════════════════════
+function renderWarehouses() {
+  const grid = document.getElementById('whGrid');
+  const icons = { 'WH-HCM': '🏙️', 'WH-DANANG': '🌊' };
+  grid.innerHTML = Object.entries(S.dbWarehouses).map(([id, w]) => `
+    <div class="wh-card" onclick="selectWH('${id}',this)" data-id="${id}">
+      <div class="wh-icon">${icons[id]||'📦'}</div>
+      <div>
+        <div class="wh-name">${id === 'WH-HCM' ? 'Kho TP.HCM' : 'Kho Đà Nẵng'}</div>
+        <div class="wh-loc">${w.location}</div>
+      </div>
+      <div class="wh-sel-mark">✓</div>
+    </div>`).join('');
+}
+
+function selectWH(id, el) {
+  S.warehouseId   = id;
+  S.warehouseData = S.dbWarehouses[id];
+  document.querySelectorAll('.wh-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  checkConflict();
+  updateRightPanel();
+}
+
+// ══════════════════════════════════════════
+// RENDER GIFTS (Step 2)
+// ══════════════════════════════════════════
+const GIFT_META = {
+  'GIFT_A': { emoji: '👜', label: 'Túi Tote Canvas', desc: 'Dồi dào cả 2 kho' },
+  'GIFT_B': { emoji: '🧖', label: 'Mặt nạ dưỡng ẩm', desc: 'HCM hết · ĐN còn' },
+  'GIFT_C': { emoji: '🍶', label: 'Bình nước giữ nhiệt', desc: 'Toàn quốc hết' },
+};
+
+function renderGifts() {
+  const grid = document.getElementById('giftGrid');
+  grid.innerHTML = Object.entries(S.dbProducts).map(([id, p]) => {
+    const m = GIFT_META[id] || { emoji: '🎁', label: p.name, desc: '' };
+    // Stock status for display
+    let stockHtml = '';
+    const whHcm  = S.dbWarehouses['WH-HCM'];
+    const whDn   = S.dbWarehouses['WH-DANANG'];
+    const sk     = `gift_stock_${id.slice(-1)}`;
+    const sHCM   = whHcm ? whHcm[sk] : 0;
+    const sDN    = whDn  ? whDn[sk]  : 0;
+    if (sHCM > 0 && sDN > 0) stockHtml = `<div class="gift-wh gift-stock-ok">✅ Đủ kho</div>`;
+    else if (sHCM === 0 && sDN > 0) stockHtml = `<div class="gift-wh gift-stock-warn">⚠️ HCM hết · ĐN còn</div>`;
+    else if (sHCM > 0 && sDN === 0) stockHtml = `<div class="gift-wh gift-stock-warn">⚠️ ĐN hết · HCM còn</div>`;
+    else stockHtml = `<div class="gift-wh gift-stock-out">❌ Toàn quốc hết</div>`;
+
+    return `<div class="gift-card" onclick="selectGift('${id}',this)" data-id="${id}">
+      <div class="gift-sel-mark">✓</div>
+      <div class="gift-emoji">${m.emoji}</div>
+      <div class="gift-name">${m.label}</div>
+      <div style="font-size:10px;color:var(--g5);margin-bottom:4px;">${p.name}</div>
+      ${stockHtml}
+    </div>`;
+  }).join('');
+}
+
+function selectGift(id, el) {
+  S.giftId   = id;
+  S.giftData = S.dbProducts[id];
+  document.querySelectorAll('.gift-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  checkConflict();
+  updateRightPanel();
+}
+
+// ══════════════════════════════════════════
+// CONFLICT HINT (live feedback)
+// ══════════════════════════════════════════
+function checkConflict() {
+  const hint = document.getElementById('conflictHint');
+  if (!S.warehouseId || !S.giftId) { hint.className = 'conflict-hint'; return; }
+
+  const wh  = S.dbWarehouses[S.warehouseId];
+  const sk  = `gift_stock_${S.giftId.slice(-1)}`;
+  const stock = wh ? wh[sk] : 0;
+
+  // Check if any warehouse has stock
+  const anyStock = Object.values(S.dbWarehouses).some(w => (w[sk] || 0) > 0);
+
+  if (stock > 0) {
+    hint.className = 'conflict-hint show ch-ok';
+    hint.innerHTML = '✅ <strong>Không có xung đột.</strong> Quà tặng có sẵn tại kho bạn chọn — LogiGift AI sẽ xử lý smooth checkout.';
+  } else if (anyStock) {
+    hint.className = 'conflict-hint show ch-warn';
+    hint.innerHTML = '⚠️ <strong>Phát hiện xung đột kho!</strong> Quà tặng hết tại kho này nhưng còn ở kho khác. LogiGift AI sẽ đề xuất phương án tốt nhất khi bạn thanh toán.';
+  } else {
+    hint.className = 'conflict-hint show ch-danger';
+    hint.innerHTML = '❌ <strong>Hết quà toàn quốc!</strong> LogiGift AI sẽ tự động đền bù voucher cho bạn.';
+  }
+
+  // Enable next button if both selected
+  const canNext = !!S.warehouseId && !!S.giftId;
+  document.getElementById('btnNext1').disabled = !canNext;
+}
+
+// ══════════════════════════════════════════
+// RIGHT PANEL UPDATE
+// ══════════════════════════════════════════
+function updateRightPanel() {
+  const rpUser = document.getElementById('rpUser');
+  const rpGift = document.getElementById('rpGift');
+  const rpWH   = document.getElementById('rpWH');
+
+  if (S.userData) {
+    const isVip = S.userData.membership_rank === 'VIP';
+    rpUser.innerHTML = `<div class="rp-user-chip">
+      <span style="font-size:18px;">${isVip?'👑':'👤'}</span>
+      <div><div style="font-weight:700;font-size:12px;">${S.userData.name}</div>
+      <div style="font-size:10px;color:var(--g5);">${S.userData.membership_rank}</div></div>
+    </div>`;
+  }
+  if (S.giftData && S.giftId) {
+    const m = GIFT_META[S.giftId] || { emoji: '🎁' };
+    rpGift.innerHTML = `<div class="rp-gift-chip">
+      <span style="font-size:18px;">${m.emoji}</span>
+      <div><div style="font-weight:700;font-size:12px;">${S.giftData.name}</div>
+      <div style="font-size:10px;color:var(--g5);">Miễn phí</div></div>
+    </div>`;
+  }
+  if (S.warehouseId) {
+    const wh = S.dbWarehouses[S.warehouseId];
+    rpWH.innerHTML = `<div style="font-size:12px;font-weight:600;">📦 ${wh.location}</div>`;
+  }
+  const ready = S.userId && S.warehouseId && S.giftId;
+  document.getElementById('rpBtnPay').disabled = !ready;
+}
+
+// ══════════════════════════════════════════
+// STEP NAV
+// ══════════════════════════════════════════
+function goStep(step) {
+  [0,1,2].forEach(i => {
+    document.getElementById(`panel${i}`).classList.toggle('active', i === step);
+    const tab = document.getElementById(`stab${i}`);
+    tab.classList.remove('active','done');
+    if (i < step) tab.classList.add('done');
+    else if (i === step) tab.classList.add('active');
+  });
+  if (step === 2) renderSummary();
+}
+
+// ══════════════════════════════════════════
+// SUMMARY (Step 3)
+// ══════════════════════════════════════════
+function renderSummary() {
+  const isVip = S.userData?.membership_rank === 'VIP';
+  const m = GIFT_META[S.giftId] || { emoji: '🎁' };
+  const wh = S.dbWarehouses[S.warehouseId];
+  document.getElementById('summaryContent').innerHTML = `
+    <div class="user-chip">
+      <span class="uc-avatar">${isVip?'👑':'👤'}</span>
+      <div class="uc-info">
+        <div class="uc-name">${S.userData.name}</div>
+        <div class="uc-tier">${S.userData.membership_rank} · Kho ${wh.location}</div>
+      </div>
+    </div>
+    <div class="summary-product">
+      <div class="sp-img">
+        <svg width="44" height="44" viewBox="0 0 100 100"><rect x="25" y="30" width="50" height="50" rx="10" fill="#fff8f6"/><rect x="25" y="30" width="50" height="20" rx="10" fill="#ee4d2d"/><rect x="25" y="42" width="50" height="8" fill="#ee4d2d"/><text x="50" y="66" text-anchor="middle" fill="#c73e24" font-size="6" font-weight="700" font-family="Inter">REVITALIFT</text></svg>
+      </div>
+      <div class="sp-info">
+        <div class="sp-name">Kem dưỡng L'ORÉAL Revitalift Day SPF35 PA++ 50ml</div>
+        <div class="sp-meta">lorealparis officialstore · SL: 1</div>
+      </div>
+      <div class="sp-price">₫349.000</div>
+    </div>
+    <div class="summary-gift">
+      <div class="sg-emoji">${m.emoji}</div>
+      <div class="sg-info">
+        <div class="sg-name">${S.giftData.name}</div>
+        <div class="sg-meta">Quà tặng kèm đơn · Kiểm tra kho khi thanh toán</div>
+      </div>
+      <div class="sg-price">₫0</div>
+    </div>
+    <div class="summary-rows">
+      <div class="sr"><span>Tạm tính</span><span>₫349.000</span></div>
+      <div class="sr"><span>Phí vận chuyển</span><span style="color:var(--green)">Miễn phí</span></div>
+      <div class="sr"><span>Quà tặng</span><span style="color:var(--green)">₫0</span></div>
+      <div class="sr total"><span>Tổng cộng</span><span>₫349.000</span></div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════
+// CHECKOUT — call logic_engine via backend
+// ══════════════════════════════════════════
+async function startCheckout() {
+  if (!S.userId || !S.warehouseId || !S.giftId) return;
+  showOv('ovProc');
+  await animSteps();
+
+  let result;
+  try {
+    const r = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: S.userId, warehouse_id: S.warehouseId, gift_id: S.giftId })
+    });
+    result = await r.json();
+  } catch(e) {
+    result = { ui_action: 'smooth_checkout', headline: '✅ Thành công', detail: 'Đơn hàng đã được xử lý.', offer_options: [] };
+  }
+  S.lastResult = result;
+  hideOv('ovProc');
+
+  const action = result.ui_action;
+  if (action === 'smooth_checkout') renderSmoothPopup(result);
+  else if (action === 'upsell')     renderUpsellPopup(result);
+  else                              renderNegotiatePopup(result); // negotiation_ui or fallback
+}
+
+async function animSteps() {
+  const ids = ['ps0','ps1','ps2','ps3'];
+  for (let i = 0; i < ids.length; i++) {
+    await sleep(350);
+    const el = document.getElementById(ids[i]);
+    if (!el) continue;
+    el.classList.add('active');
+    el.querySelector('.ps-icon').textContent = '↻';
+    if (i > 0) {
+      const p = document.getElementById(ids[i-1]);
+      p.classList.remove('active'); p.classList.add('done');
+      p.querySelector('.ps-icon').textContent = '✓';
+    }
+  }
+  await sleep(380);
+  const last = document.getElementById(ids[ids.length-1]);
+  if (last) { last.classList.remove('active'); last.classList.add('done'); last.querySelector('.ps-icon').textContent='✓'; }
+}
+
+// ══════════════════════════════════════════
+// POPUP: SMOOTH CHECKOUT
+// ══════════════════════════════════════════
+function renderSmoothPopup(r) {
+  const isVip = S.userData?.membership_rank === 'VIP';
+  const m = GIFT_META[S.giftId] || { emoji: '🎁' };
+  document.getElementById('popupBox').innerHTML = `
+    <div class="handle"></div>
+    <div class="popup-top-green">
+      <div class="success-ring">✓</div>
+      <div class="pop-h">${r.headline}</div>
+      <div class="pop-s">${isVip && r.status === 'VIP_SMOOTH' ? 'LogiGift tự điều phối ship ngầm — bạn không mất thêm phí' : 'Quà tặng có sẵn tại kho — đơn hàng suôn sẻ'}</div>
+    </div>
+    <div style="padding:16px 18px;">
+      <div style="background:var(--grl);border:1px solid #b7e4c7;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--green);">
+        <strong>✅ LogiGift AI xác nhận:</strong> ${r.detail}
+      </div>
+      <div style="background:var(--gl);border:1px solid #ffd988;border-radius:8px;padding:10px 12px;display:flex;gap:8px;align-items:center;margin-bottom:14px;">
+        <span style="font-size:22px;">${m.emoji}</span>
+        <div><div style="font-size:12px;font-weight:700;">${S.giftData?.name||'Quà tặng'}</div><div style="font-size:11px;color:var(--g5);">Quà kèm đơn · Đủ hàng</div></div>
+        <div style="margin-left:auto;font-size:13px;font-weight:800;color:var(--green);">₫0</div>
+      </div>
+      <div class="offers-area" style="padding:0;">
+        <button class="offer-btn primary" onclick="confirmOrder('${r.headline} — Đơn hàng đang được xử lý và sẽ giao đến bạn kèm đầy đủ quà tặng trong 2-4 ngày.')">Xác nhận thanh toán →</button>
+      </div>
+    </div>`;
+  showOv('ovResult');
+}
+
+// ══════════════════════════════════════════
+// POPUP: UPSELL
+// ══════════════════════════════════════════
+async function renderUpsellPopup(r) {
+  const isVip = S.userData?.membership_rank === 'VIP';
+  document.getElementById('popupBox').innerHTML = `
+    <div class="handle"></div>
+    <div class="popup-top-warn">
+      <div class="pop-icon-box pib-warn">🛒</div>
+      <div>
+        <div class="pop-h">${r.headline}</div>
+        <div class="pop-s">LogiGift AI phát hiện xung đột — tìm được phương án tốt nhất</div>
+      </div>
+    </div>
+    <div class="conf-row">
+      <div class="conf-chip"><div class="conf-val" style="color:var(--gold);">Upsell</div><div class="conf-lbl">UI Action</div></div>
+      <div class="conf-chip"><div class="conf-val" style="color:var(--blue);">Normal</div><div class="conf-lbl">Hạng khách</div></div>
+      <div class="conf-chip"><div class="conf-val" style="color:var(--p);">MAB</div><div class="conf-lbl">Thuật toán</div></div>
+    </div>
+    <div class="ai-box" id="aiBox"><span class="ai-lbl">✦ AI</span><div class="ai-loading"><span class="dots"><span></span><span></span><span></span></span><span style="margin-left:6px;">Claude AI đang soạn thông điệp...</span></div></div>
+    <div class="upsell-box">
+      <div class="upsell-amount">+${(r.upsell_amount||S.upsellThreshold).toLocaleString()}đ</div>
+      <div class="upsell-lbl">Mua thêm số tiền này để gom đơn miễn phí & giữ nguyên quà tặng</div>
+    </div>
+    <div class="offers-area">
+      <div class="offers-label">📋 Các lựa chọn (MAB đã xếp hạng)</div>
+      ${buildOfferButtons(r.offer_options)}
+    </div>`;
+  showOv('ovResult');
+  loadAIText(r, isVip);
+}
+
+// ══════════════════════════════════════════
+// POPUP: NEGOTIATION / FALLBACK
+// ══════════════════════════════════════════
+async function renderNegotiatePopup(r) {
+  const isVip = S.userData?.membership_rank === 'VIP';
+  const isFallback = r.ui_action === 'fallback';
+  const topColor = isFallback ? 'pib-red' : 'pib-warn';
+  const topEmoji = isFallback ? '😔' : '⚠️';
+
+  let extraHtml = '';
+  if (isFallback) {
+    const voucherText = r.offer_options?.[0] || '';
+    const voucherVal  = isVip ? '100.000đ' : '50.000đ';
+    extraHtml = `<div class="voucher-big"><div class="vb-val">₫${isVip ? '100.000' : '50.000'}</div><div class="vb-lbl">🎟️ Voucher bù đắp tự động${isVip?' — Đặc quyền VIP':''}</div></div>`;
+  }
+
+  document.getElementById('popupBox').innerHTML = `
+    <div class="handle"></div>
+    <div class="popup-top-warn">
+      <div class="pop-icon-box ${topColor}">${topEmoji}</div>
+      <div>
+        <div class="pop-h">${r.headline}</div>
+        <div class="pop-s">LogiGift AI đã xử lý & chuẩn bị phương án cho bạn</div>
+      </div>
+    </div>
+    <div class="conf-row">
+      <div class="conf-chip"><div class="conf-val" style="color:${isFallback?'var(--p)':'var(--gold)'};">${isFallback?'Fallback':'Negotiate'}</div><div class="conf-lbl">UI Action</div></div>
+      <div class="conf-chip"><div class="conf-val" style="color:${isVip?'var(--gold)':'var(--blue);'};">${isVip?'VIP 👑':'Normal'}</div><div class="conf-lbl">Hạng khách</div></div>
+      <div class="conf-chip"><div class="conf-val" style="color:var(--p);">MAB</div><div class="conf-lbl">Thuật toán</div></div>
+    </div>
+    <div class="ai-box" id="aiBox"><span class="ai-lbl">✦ AI</span><div class="ai-loading"><span class="dots"><span></span><span></span><span></span></span><span style="margin-left:6px;">Claude AI đang soạn thông điệp...</span></div></div>
+    ${extraHtml}
+    <div class="offers-area">
+      <div class="offers-label">📋 Phương án AI đề xuất (MAB đã xếp hạng)</div>
+      ${buildOfferButtons(r.offer_options)}
+    </div>`;
+  showOv('ovResult');
+  loadAIText(r, isVip);
+}
+
+// ══════════════════════════════════════════
+// BUILD OFFER BUTTONS from offer_options list
+// ══════════════════════════════════════════
+function buildOfferButtons(options) {
+  if (!options || options.length === 0) return '';
+  return options.map((opt, i) => {
+    const isCancel = opt.includes('Hủy');
+    const isPrimary = i === 0 && !isCancel;
+    let cls = isCancel ? 'cancel' : (isPrimary ? 'primary' : '');
+    let tag = isPrimary ? `<span class="mab-tag mab-primary">⭐ Ưu tiên</span>` : (isCancel ? '' : `<span class="mab-tag mab-secondary">#${i+1}</span>`);
+    const confirmMsg = isCancel
+      ? null
+      : `Đã chọn: ${opt.replace(/[⭐➖✅🎟️🚚❌]/g,'').trim()} — Cảm ơn bạn đã tin tưởng LogiGift AI!`;
+    const onclick = isCancel
+      ? `hideOv('ovResult')`
+      : `confirmOrder('${confirmMsg.replace(/'/g,"\\'")}')`;
+    return `<button class="offer-btn ${cls}" onclick="${onclick}">${opt} ${tag}</button>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// LOAD AI TEXT (Claude API)
+// ══════════════════════════════════════════
+async function loadAIText(result, isVip) {
+  try {
+    const r = await fetch('/api/gen-text', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        result,
+        is_vip: isVip,
+        user_name: S.userData?.name || 'bạn',
+        gift_name: S.giftData?.name || 'quà tặng'
+      })
+    });
+    const d = await r.json();
+    const b = document.getElementById('aiBox');
+    if (b) b.innerHTML = `<span class="ai-lbl">✦ AI ${d.by||''}</span><div style="padding-top:4px;">${d.text}</div>`;
+  } catch(e) {
+    const b = document.getElementById('aiBox');
+    if (b) b.innerHTML = `<span class="ai-lbl">✦ AI</span><div style="padding-top:4px;color:var(--g5);">Hệ thống đang xử lý phương án tốt nhất cho bạn.</div>`;
+  }
+}
+
+// ══════════════════════════════════════════
+// CONFIRM ORDER
+// ══════════════════════════════════════════
+function confirmOrder(msg) {
+  hideOv('ovResult');
+  document.getElementById('finalMsg').textContent = msg;
+  const comm = Math.round(349000 * 0.05).toLocaleString('vi-VN');
+  document.getElementById('kpiComm').textContent = '₫' + comm;
+  showOv('ovSuccess');
+}
+
+function restart() {
+  hideOv('ovSuccess');
+  S.userId = S.warehouseId = S.giftId = null;
+  S.userData = S.warehouseData = S.giftData = null;
+  S.lastResult = null;
+  // reset step tabs
+  ['ps0','ps1','ps2','ps3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.className = 'ps'; el.querySelector('.ps-icon').textContent = '·'; }
+  });
+  document.querySelectorAll('.user-card,.gift-card,.wh-card').forEach(el => el.classList.remove('selected'));
+  document.getElementById('rpUser').className = 'rp-empty';
+  document.getElementById('rpUser').textContent = 'Chưa chọn';
+  document.getElementById('rpGift').className = 'rp-empty';
+  document.getElementById('rpGift').textContent = 'Chưa chọn';
+  document.getElementById('rpWH').className = 'rp-empty';
+  document.getElementById('rpWH').textContent = 'Chưa chọn';
+  document.getElementById('rpBtnPay').disabled = true;
+  document.getElementById('btnNext0').disabled = true;
+  document.getElementById('btnNext1').disabled = true;
+  document.getElementById('conflictHint').className = 'conflict-hint';
+  goStep(0);
+}
+
+// ══════════════════════════════════════════
+// OVERLAY HELPERS
+// ══════════════════════════════════════════
+function showOv(id) { document.getElementById(id).classList.add('show'); }
+function hideOv(id) { document.getElementById(id).classList.remove('show'); }
+function sleep(ms)  { return new Promise(r => setTimeout(r, ms)); }
+
+init();
+</script>
+</body>
+</html>

@@ -1,123 +1,219 @@
-import json, os
-from pydantic import BaseModel
-from typing import Literal
-from config import CONFIDENCE_THRES, VIP_LTV_THRES, SHIP_FEE_VND, VOUCHER_VALUE, AVG_ORDER_VALUE, COMMISSION_RATE
+'''
+Oi Thy, lõi AI tui xong rồi nha. Tui giải thích sơ cách Thy xài cái hàm của tui để vẽ UI nha:
 
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'mock_db.json')
 
-def load_db():
-    with open(DB_PATH, 'r', encoding='utf-8') as f:
-        return json.load(f)
+1. Khúc Thy gọi AI (Input):
 
-def save_db(db):
-    with open(DB_PATH, 'w', encoding='utf-8') as f:
-        json.dump(db, f, ensure_ascii=False, indent=2)
+- Lúc người ta bấm nút Thanh toán, Thy lấy 3 cái mã từ dropdown rồi gọi hàm tui: ket_qua = process_checkout(user_id, warehouse_id, gift_id)
 
-# ── Pydantic Models ──────────────────────────────────────────────
-class WarehouseStatus(BaseModel):
-    wh_id: str
-    name: str
-    gift_stock: int
-    confidence_score: float
-    last_sync_mins: int
-    flag: Literal["OK", "LOW_CONFIDENCE", "OUT_OF_STOCK"]
+- Nhớ import cái hàm này từ file logic_engine.py vô nha.
 
-class CheckoutResult(BaseModel):
-    decision: Literal["APPROVE", "APPROVE_VIP_SUBSIDY", "OFFER_VOUCHER", "HUMAN_REVIEW"]
-    message: str
-    roi_ok: bool
-    delta_value_vnd: int
-    warehouse_used: str
-    need_ai_message: bool
+2. Khúc AI trả về (Output):
 
-# ── Lưới lọc 1: Kiểm tra Confidence Score ───────────────────────
-def check_warehouse(wh_id: str, wh_data: dict) -> WarehouseStatus:
-    flag = "OK"
-    if wh_data["gift_stock"] == 0:
-        flag = "OUT_OF_STOCK"
-    elif wh_data["confidence_score"] < CONFIDENCE_THRES:
-        flag = "LOW_CONFIDENCE"
-    return WarehouseStatus(wh_id=wh_id, flag=flag, **wh_data)
+- Cái biến ket_qua nó sẽ là 1 cái object JSON (hay Dict). Nó có mấy trường quan trọng nhất mà Thy cần để vẽ giao diện:
 
-# ── Lưới lọc 2: ROI Guard ────────────────────────────────────────
-def roi_guard(ltv_vnd: int) -> tuple[bool, int]:
-    """Trả về (roi_ok, delta_value). Chỉ duyệt bù ship nếu LTV > ngưỡng VIP."""
-    delta = int(AVG_ORDER_VALUE * COMMISSION_RATE)   # hoa hồng cứu được
-    cost  = SHIP_FEE_VND
-    roi_ok = (ltv_vnd >= VIP_LTV_THRES) and (delta > cost)
-    return roi_ok, delta
+    + ui_action: Tui trả về 3 loại (Thy lấy cái này làm if/elif để vẽ luồng nè):
 
-# ── Lưới lọc 3: MAB Scoring & Quyết định ────────────────────────
-def mab_score(confidence: float, roi_ok: bool, is_vip: bool) -> float:
-    """Score = confidence × roi_weight × vip_weight"""
-    roi_w = 1.2 if roi_ok else 0.8
-    vip_w = 1.3 if is_vip else 1.0
-    return round(confidence * roi_w * vip_w, 4)
+        "smooth_checkout": Tồn kho đủ hết hoặc tui tự bù ship ngầm rồi. Khúc này Thy cho bắn pháo hoa, chốt đơn suôn sẻ, không hiện popup hỏi han gì hết.
 
-# ── Hàm chính ────────────────────────────────────────────────────
-def process_checkout(user_id: str, primary_wh: str = "WH_HCM") -> CheckoutResult:
-    db = load_db()
-    user = db["users"][user_id]
-    is_vip = user["rank"] == "VIP"
-    ltv    = user["ltv_vnd"]
+        "upsell": Lỡ hết hàng mà khách thường, tui sẽ gợi ý mua thêm. Khúc này Thy bật popup lên, hiện số tiền cần mua thêm ở trường "upsell_amount".
 
-    wh_primary = check_warehouse(primary_wh, db["warehouses"][primary_wh])
+        "negotiation_ui" hoặc "fallback": Mấy ca hết hàng phải đền bù. Thy cũng bật cái popup lên.
 
-    # Kho chính hết hàng → thử kho dự phòng
-    backup_wh_id = "WH_HN" if primary_wh == "WH_HCM" else "WH_HCM"
-    wh_backup    = check_warehouse(backup_wh_id, db["warehouses"][backup_wh_id])
+    + headline & detail: Tui viết sẵn text rồi, Thy cứ lấy in thẳng ra tiêu đề với mô tả popup.
 
-    roi_ok, delta = roi_guard(ltv)
-    score = mab_score(wh_backup.confidence_score, roi_ok, is_vip)
+    + offer_options: (Quan trọng nè!) Nó là 1 cái list (danh sách) các lựa chọn ưu tiên tui đã sắp xếp từ trên xuống dưới (cái xịn nhất nằm đầu). Thy cứ dùng vòng lặp for lôi từng cái ra làm thành mấy cái nút bấm (button) cho người ta chọn nghen. Nút đầu tiên Thy tô màu nổi lên xíu (primary button) để tạo hiệu ứng chim mồi nha.
 
-    # ── Ra quyết định ──────────────────────────────────────────
-    if wh_primary.flag == "OK":
-        decision = "APPROVE"
-        msg = f"✅ Duyệt đơn — giao quà từ {wh_primary.name}."
-        wh_used = primary_wh
-        need_ai = False
+Đó, logic chỉ có nhiêu đó thuiiii
 
-    elif wh_primary.flag == "LOW_CONFIDENCE":
-        decision = "HUMAN_REVIEW"
-        msg = f"🚨 Dữ liệu kho {wh_primary.name} không đáng tin (score={wh_primary.confidence_score}). Chuyển CSKH xử lý."
-        wh_used = primary_wh
-        need_ai = False
+LƯU Ý: Trong cái file logic_engine.py tui gửi, cái cục data DB ở trên cùng với cái đoạn if __name__ == "__main__": ở tuốt dưới cùng là để tui test chay thôi nha. Lúc Thy ráp code thì nhớ xóa cái đoạn test ở dưới cùng i
+'''
 
-    elif wh_primary.flag == "OUT_OF_STOCK":
-        if wh_backup.flag == "OK" and roi_ok:
-            decision = "APPROVE_VIP_SUBSIDY" if is_vip else "APPROVE"
-            label = "VIP — bù ship chéo kho" if is_vip else "chuyển kho dự phòng"
-            msg = f"🔄 Kho HCM hết quà → {label} từ {wh_backup.name} (score={wh_backup.confidence_score})."
-            wh_used = backup_wh_id
-            need_ai = True
-        elif wh_backup.flag == "LOW_CONFIDENCE":
-            decision = "HUMAN_REVIEW"
-            msg = "🚨 Cả 2 kho có vấn đề. Chuyển nhân viên CSKH xử lý thủ công."
-            wh_used = backup_wh_id
-            need_ai = False
-        else:
-            decision = "OFFER_VOUCHER"
-            msg = f"🎟️ Hết quà toàn hệ thống — tặng Voucher {VOUCHER_VALUE:,}đ bù đắp."
-            wh_used = backup_wh_id
-            need_ai = True
 
+
+import json
+
+# DATABASE
+
+DB = {
+    "users": {
+        "USR-VIP-001": {"name": "Nguyễn Thành Long", "membership_rank": "VIP"},
+        "USR-NOR-002": {"name": "Đặng Văn Hùng",     "membership_rank": "Normal"}
+    },
+    "warehouses": {
+        "WH-HCM":    {"location": "TP.HCM",  "gift_stock_A": 50, "gift_stock_B": 0,   "gift_stock_C": 0},
+        "WH-DANANG": {"location": "Đà Nẵng", "gift_stock_A": 50, "gift_stock_B": 100, "gift_stock_C": 0}
+    },
+    "products": {
+        "GIFT_A": {"name": "Túi Tote (dồi dào)"},
+        "GIFT_B": {"name": "Mặt nạ (HCM hết, ĐN còn)"},
+        "GIFT_C": {"name": "Bình nước (toàn quốc hết)"}
+    },
+    "upsell_threshold": 50000
+}
+
+
+# ── TẦNG 1: DATA ACCESS ───────────────────────────────────────────
+def fetch_wms_data(user_id, warehouse_id, gift_id):
+    user          = DB["users"].get(user_id, {})
+    current_wh    = DB["warehouses"].get(warehouse_id, {})
+    gift          = DB["products"].get(gift_id, {})
+    stock_key     = f"gift_stock_{gift_id[-1]}"
+    current_stock = current_wh.get(stock_key, 0)
+    return user, current_wh, gift, stock_key, current_stock
+
+
+# ── TẦNG 2: MAB SCORING ───────────────────────────────────────────
+def score_option(option_type, is_vip):
+    """
+    Trọng số thay đổi theo hạng khách:
+    - VIP  : ưu tiên giữ chân (LTV 0.6)
+    - Normal: ưu tiên tốc độ + lợi nhuận (0.5/0.5)
+    """
+    w_speed, w_profit, w_ltv = (0.2, 0.2, 0.6) if is_vip else (0.5, 0.5, 0.0)
+    raw_scores = {
+        "bu_ship":     (0.5, 0.4, 1.0),
+        "voucher_100k":(1.0, 0.1, 0.9),
+        "voucher_50k": (1.0, 0.6, 0.5),
+    }
+    s, p, l = raw_scores.get(option_type, (0, 0, 0))
+    return round(s * w_speed + p * w_profit + l * w_ltv, 2)
+
+
+def generate_and_rank_options(backup_wh, is_vip):
+    options = []
+    if backup_wh:
+        options.append({
+            "action_id": "bu_ship",
+            "text":  f"🚚 Ship chéo từ {backup_wh['location']}",
+            "score": score_option("bu_ship", is_vip)
+        })
+    voucher_type = "voucher_100k" if is_vip else "voucher_50k"
+    options.append({
+        "action_id": voucher_type,
+        "text":  "🎟️ Voucher VIP 100k" if is_vip else "🎟️ Voucher 50k",
+        "score": score_option(voucher_type, is_vip)
+    })
+    return sorted(options, key=lambda x: x["score"], reverse=True)
+
+
+# ── TẦNG 3: PLATFORM LOGIC ────────────────────────────────────────
+def analyze_platform_logic(user, current_wh_id, stock_key, current_stock):
+    is_vip = user.get("membership_rank") == "VIP"
+
+    # Quà còn hàng → checkout ngay
+    if current_stock > 0:
+        return "SUCCESS", None, [], is_vip
+
+    # Tìm kho backup còn quà
+    backup_wh = None
+    for w_id, w_data in DB["warehouses"].items():
+        if w_id != current_wh_id and w_data.get(stock_key, 0) > 0:
+            backup_wh = w_data
+            break
+
+    # Không có kho nào còn quà → Fallback ngay, không cần rank
+    if not backup_wh:
+        ranked = generate_and_rank_options(None, is_vip)  # chỉ có voucher
+        return "FALLBACK", None, ranked, is_vip
+
+    # Có kho backup → rank các phương án
+    ranked = generate_and_rank_options(backup_wh, is_vip)
+
+    # MAB dùng để rank và hiển thị điểm — không dùng để route
+    if is_vip:
+        status = "VIP_SMOOTH"   # VIP + có kho khác → tự ship ngầm
     else:
-        decision = "OFFER_VOUCHER"
-        msg = "🎟️ Không thể xử lý tự động — tặng voucher bù đắp."
-        wh_used = primary_wh
-        need_ai = True
+        status = "UPSELL"       # Normal + có kho khác → gợi ý mua thêm
 
-    # ── Cập nhật thống kê Admin ────────────────────────────────
-    if decision in ("APPROVE", "APPROVE_VIP_SUBSIDY", "OFFER_VOUCHER"):
-        db["orders_saved"]          = db.get("orders_saved", 0) + 1
-        db["commission_rescued_vnd"] = db.get("commission_rescued_vnd", 0) + delta
-        save_db(db)
+    return status, backup_wh, ranked, is_vip
 
-    return CheckoutResult(
-        decision=decision,
-        message=msg,
-        roi_ok=roi_ok,
-        delta_value_vnd=delta,
-        warehouse_used=wh_used,
-        need_ai_message=need_ai,
+
+# ── TẦNG 4: OUTPUT BUILDER ────────────────────────────────────────
+def build_json_response(status, user, gift, current_wh, ranked, is_vip):
+
+    if status == "SUCCESS":
+        return {
+            "status":       "SUCCESS",
+            "ui_action":    "smooth_checkout",
+            "headline":     "✅ Đơn hàng thông suốt!",
+            "detail":       f"Quà **{gift.get('name')}** sẵn sàng xuất kho.",
+            "groq_prompt":  False,
+            "offer_options": []
+        }
+
+    if status == "VIP_SMOOTH":
+        return {
+            "status":       "VIP_SMOOTH",
+            "ui_action":    "smooth_checkout",
+            "headline":     "💎 VIP — LogiGift tự xử lý!",
+            "detail":       f"Quà đang ở kho khác. LogiGift tự ship về — bạn không mất phí thêm.",
+            "groq_prompt":  True,
+            "offer_options": []
+        }
+
+    if status == "UPSELL":
+        gap = DB["upsell_threshold"]
+        opts = [o["text"] for o in ranked]
+        opts.append("❌ Hủy đơn")
+        return {
+            "status":        "UPSELL",
+            "ui_action":     "upsell",
+            "headline":      "🛒 Mua thêm để giữ nguyên quà!",
+            "detail":        f"Quà đang ở kho khác. Mua thêm **{gap:,}đ** để gom đơn miễn phí!",
+            "upsell_amount": gap,
+            "groq_prompt":   True,
+            "offer_options": opts
+        }
+
+    if status == "NEGOTIATE":
+        opts = []
+        for i, o in enumerate(ranked):
+            prefix = f"⭐ ƯU TIÊN (MAB {o['score']})" if i == 0 else f"➖ Lựa chọn {i+1} (MAB {o['score']})"
+            opts.append(f"{prefix}: {o['text']}")
+        opts.append("❌ Hủy đơn")
+        return {
+            "status":       "NEGOTIATE",
+            "ui_action":    "negotiation_ui",
+            "headline":     "🤝 LogiGift đề xuất phương án",
+            "detail":       f"Kho {current_wh.get('location')} hết **{gift.get('name')}**. MAB đã xếp hạng:",
+            "groq_prompt":  True,
+            "offer_options": opts
+        }
+
+    # FALLBACK
+    offer = "Voucher VIP 100k" if is_vip else "Voucher 50k"
+    return {
+        "status":       "FALLBACK",
+        "ui_action":    "fallback",
+        "headline":     "🎫 Hết quà toàn quốc — đền bù tự động",
+        "detail":       f"Hết **{gift.get('name')}** trên toàn hệ thống. LogiGift tự động tặng **{offer}**.",
+        "groq_prompt":  True,
+        "offer_options": [f"✅ Nhận {offer}", "❌ Hủy đơn"]
+    }
+
+
+# ── TẦNG 5: ORCHESTRATOR ─────────────────────────────────────────
+def process_checkout(user_id, warehouse_id, gift_id):
+    user, current_wh, gift, stock_key, current_stock = fetch_wms_data(
+        user_id, warehouse_id, gift_id
     )
+    status, backup_wh, ranked, is_vip = analyze_platform_logic(
+        user, warehouse_id, stock_key, current_stock
+    )
+    return build_json_response(status, user, gift, current_wh, ranked, is_vip)
+
+
+# ── TEST ──────────────────────────────────────────────────────────
+if __name__ == "__main__":
+    tests = [
+        ("TEST 1 — VIP + còn hàng → SUCCESS",            "USR-VIP-001", "WH-HCM",    "GIFT_A"),
+        ("TEST 2 — VIP + kho khác còn → VIP_SMOOTH",     "USR-VIP-001", "WH-HCM",    "GIFT_B"),
+        ("TEST 3 — Normal + kho khác còn → UPSELL",      "USR-NOR-002", "WH-HCM",    "GIFT_B"),
+        ("TEST 4 — VIP + hết toàn quốc → FALLBACK 100k", "USR-VIP-001", "WH-HCM",    "GIFT_C"),
+        ("TEST 5 — Normal + hết toàn quốc → FALLBACK 50k","USR-NOR-002","WH-HCM",    "GIFT_C"),
+        ("TEST 6 — Normal + còn ở kho hiện tại → SUCCESS","USR-NOR-002","WH-DANANG", "GIFT_B"),
+    ]
+    for title, u, w, g in tests:
+        print(f"\n{'='*55}\n{title}")
+        print(json.dumps(process_checkout(u, w, g), ensure_ascii=False, indent=2))
