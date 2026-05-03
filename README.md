@@ -79,7 +79,6 @@ Thu thập 4 luồng: **ATP** (tồn kho/ngân sách quà), **CTP** (năng lực
 
 ---
 
-### Luồng Demo đề xuất
 
 1. **Chọn khách VIP** (Nguyễn Minh Khoa)
 2. **Thêm vào giỏ**: Áo khoác (Kho HN) + Giày Nike (Kho HCM) → tạo multi-warehouse

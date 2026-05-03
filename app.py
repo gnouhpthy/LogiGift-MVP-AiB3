@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import json, os, urllib.request
 from core.logic_engine import process_checkout, DB
+from config import OPENROUTER_API_KEY
 
 app = Flask(__name__)
 
@@ -44,16 +45,36 @@ def gen_text():
     prompt = prompts.get(ui_action, "")
     if not prompt:
         return jsonify({"text": result.get("detail",""), "by": "static"})
+    
     try:
-        api_key = os.environ.get("ANTHROPIC_API_KEY","")
-        if not api_key: raise ValueError("no key")
-        payload = json.dumps({"model":"claude-sonnet-4-20250514","max_tokens":200,"messages":[{"role":"user","content":prompt}]}).encode()
-        req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=payload,
-            headers={"Content-Type":"application/json","x-api-key":api_key,"anthropic-version":"2023-06-01"})
-        with urllib.request.urlopen(req, timeout=12) as r:
+        if not OPENROUTER_API_KEY: raise ValueError("no key")
+        
+        payload = json.dumps({
+            "model": "meta-llama/llama-3.3-70b-instruct:free", 
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.7
+        }).encode()
+        
+        req = urllib.request.Request(
+            "https://openrouter.ai/api/v1/chat/completions", 
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}" 
+            }
+        )
+        
+        with urllib.request.urlopen(req) as r:
             rd = json.loads(r.read().decode())
-        return jsonify({"text": rd["content"][0]["text"], "by": "Claude AI"})
-    except Exception:
+            
+        generated_text = rd["choices"][0]["message"]["content"]
+        
+        return jsonify({"text": generated_text, "by": "Llama-3 via OpenRouter"})
+        
+    except Exception as e:
+        # In nhẹ 1 dòng ra terminal để giám sát, không làm rác log
+        print(f"⚠️ API Fallback kích hoạt do lỗi: {e}")
+        
         fb = {
             "upsell":         f"Quà \"{gift_name}\" đang ở kho khác — mua thêm một chút là gom đơn miễn phí và giữ nguyên quà nhé! 🎁",
             "negotiation_ui": "Rất tiếc vì sự bất tiện! Chúng tôi đã chuẩn bị sẵn các phương án tốt nhất cho bạn.",

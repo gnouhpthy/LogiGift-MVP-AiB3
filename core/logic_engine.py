@@ -202,3 +202,4 @@ def process_checkout(user_id, warehouse_id, gift_id):
         user, warehouse_id, stock_key, current_stock
     )
     return build_json_response(status, user, gift, current_wh, ranked, is_vip)
+
