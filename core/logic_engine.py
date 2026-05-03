@@ -1,36 +1,3 @@
-'''
-Oi Thy, lõi AI tui xong rồi nha. Tui giải thích sơ cách Thy xài cái hàm của tui để vẽ UI nha:
-
-
-1. Khúc Thy gọi AI (Input):
-
-- Lúc người ta bấm nút Thanh toán, Thy lấy 3 cái mã từ dropdown rồi gọi hàm tui: ket_qua = process_checkout(user_id, warehouse_id, gift_id)
-
-- Nhớ import cái hàm này từ file logic_engine.py vô nha.
-
-2. Khúc AI trả về (Output):
-
-- Cái biến ket_qua nó sẽ là 1 cái object JSON (hay Dict). Nó có mấy trường quan trọng nhất mà Thy cần để vẽ giao diện:
-
-    + ui_action: Tui trả về 3 loại (Thy lấy cái này làm if/elif để vẽ luồng nè):
-
-        "smooth_checkout": Tồn kho đủ hết hoặc tui tự bù ship ngầm rồi. Khúc này Thy cho bắn pháo hoa, chốt đơn suôn sẻ, không hiện popup hỏi han gì hết.
-
-        "upsell": Lỡ hết hàng mà khách thường, tui sẽ gợi ý mua thêm. Khúc này Thy bật popup lên, hiện số tiền cần mua thêm ở trường "upsell_amount".
-
-        "negotiation_ui" hoặc "fallback": Mấy ca hết hàng phải đền bù. Thy cũng bật cái popup lên.
-
-    + headline & detail: Tui viết sẵn text rồi, Thy cứ lấy in thẳng ra tiêu đề với mô tả popup.
-
-    + offer_options: (Quan trọng nè!) Nó là 1 cái list (danh sách) các lựa chọn ưu tiên tui đã sắp xếp từ trên xuống dưới (cái xịn nhất nằm đầu). Thy cứ dùng vòng lặp for lôi từng cái ra làm thành mấy cái nút bấm (button) cho người ta chọn nghen. Nút đầu tiên Thy tô màu nổi lên xíu (primary button) để tạo hiệu ứng chim mồi nha.
-
-Đó, logic chỉ có nhiêu đó thuiiii
-
-LƯU Ý: Trong cái file logic_engine.py tui gửi, cái cục data DB ở trên cùng với cái đoạn if __name__ == "__main__": ở tuốt dưới cùng là để tui test chay thôi nha. Lúc Thy ráp code thì nhớ xóa cái đoạn test ở dưới cùng i
-'''
-
-
-
 import json
 
 # DATABASE
