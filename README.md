@@ -30,8 +30,6 @@ logigift/
 ├── app.py              # Flask backend + API routes
 ├── logic_engine.py     # AI Logic Engine (4 tầng)
 ├── requirements.txt
-├── data/
-│   └── mock_db.json    # Mock database (sản phẩm, quà, khách hàng, kho)
 └── templates/
     └── index.html      # Full-stack web UI
 ```
