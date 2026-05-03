@@ -77,16 +77,6 @@ Thu thập 4 luồng: **ATP** (tồn kho/ngân sách quà), **CTP** (năng lực
 
 ---
 
-
-1. **Chọn khách VIP** (Nguyễn Minh Khoa)
-2. **Thêm vào giỏ**: Áo khoác (Kho HN) + Giày Nike (Kho HCM) → tạo multi-warehouse
-3. **Chọn quà**: "Quà Vớ" (stock = 0, hết hàng) → tạo conflict
-4. **Nhấn Thanh toán** → xem AI Engine chạy 4 tầng
-5. **Xem Negotiation Popup** do Claude AI sinh ra
-6. **Chấp nhận phương án** → xem Admin Dashboard cập nhật
-
----
-
 ### ROI Logic — Delta Value
 
 - **Không có AI**: Lỗi quà → Chặn checkout → Khách hủy đơn → Sàn mất 100% hoa hồng (5-8%)
