@@ -777,10 +777,10 @@ async function renderUpsellPopup(r) {
     <div class="ai-box" id="aiBox"><span class="ai-lbl">✦ AI</span><div class="ai-loading"><span class="dots"><span></span><span></span><span></span></span><span style="margin-left:6px;">Claude AI đang soạn thông điệp...</span></div></div>
     <div class="upsell-box">
       <div class="upsell-amount">+${(r.upsell_amount||S.upsellThreshold).toLocaleString()}đ</div>
-      <div class="upsell-lbl">Mua thêm số tiền này để gom đơn miễn phí & giữ nguyên quà tặng</div>
+      <div class="upsell-lbl">Mua thêm số tiền này để gom đơn miễn phí để được giữ nguyên quà tặng</div>
     </div>
     <div class="offers-area">
-      <div class="offers-label">📋 Các lựa chọn (MAB đã xếp hạng)</div>
+      <div class="offers-label">📋 Các lựa chọn (AI đã xếp hạng)</div>
       ${buildOfferButtons(r.offer_options)}
     </div>`;
   showOv('ovResult');
@@ -833,17 +833,34 @@ async function renderNegotiatePopup(r) {
 function buildOfferButtons(options) {
   if (!options || options.length === 0) return '';
   return options.map((opt, i) => {
-    const isCancel = opt.includes('Hủy');
+    const isCancel  = opt.includes('Hủy');
+    const isShip    = opt.includes('Ship chéo');
     const isPrimary = i === 0 && !isCancel;
     let cls = isCancel ? 'cancel' : (isPrimary ? 'primary' : '');
-    let tag = isPrimary ? `<span class="mab-tag mab-primary">⭐ Ưu tiên</span>` : (isCancel ? '' : `<span class="mab-tag mab-secondary">#${i+1}</span>`);
-    const confirmMsg = isCancel
-      ? null
-      : `Đã chọn: ${opt.replace(/[⭐➖✅🎟️🚚❌]/g,'').trim()} — Cảm ơn bạn đã tin tưởng LogiGift AI!`;
+    let tag = isPrimary
+      ? `<span class="mab-tag mab-primary">⭐ Ưu tiên</span>`
+      : (isCancel ? '' : `<span class="mab-tag mab-secondary">#${i+1}</span>`);
+
+    let subText = '';
+    if (isShip) {
+      subText = `<div style="font-size:11px;color:#e65100;margin-top:4px;">📌 Phụ phí vận chuyển: +20.000đ</div>`;
+    }
+
+    const confirmMsg = isCancel ? null
+      : `Đã chọn: ${opt.replace(/[⭐➖✅🎟️🚚❌]/g,'').trim()}${isShip?' — Phụ phí 20.000đ đã được cộng vào đơn.':' — Cảm ơn bạn đã tin tưởng LogiGift AI!'}`;
+      
+    // Gắn biến isShip vào đây để truyền xuống hàm chốt đơn
     const onclick = isCancel
       ? `hideOv('ovResult')`
-      : `confirmOrder('${confirmMsg.replace(/'/g,"\\'")}')`;
-    return `<button class="offer-btn ${cls}" onclick="${onclick}">${opt} ${tag}</button>`;
+      : `confirmOrder('${confirmMsg.replace(/'/g,"\\'")}', ${isShip})`;
+
+    return `<button class="offer-btn ${cls}" onclick="${onclick}">
+      <div style="flex:1;text-align:left;">
+        ${opt}
+        ${subText}
+      </div>
+      ${tag}
+    </button>`;
   }).join('');
 }
 
@@ -874,11 +891,33 @@ async function loadAIText(result, isVip) {
 // ══════════════════════════════════════════
 // CONFIRM ORDER
 // ══════════════════════════════════════════
-function confirmOrder(msg) {
+function confirmOrder(msg, hasShippingFee = false) {
   hideOv('ovResult');
   document.getElementById('finalMsg').textContent = msg;
-  const comm = Math.round(349000 * 0.05).toLocaleString('vi-VN');
-  document.getElementById('kpiComm').textContent = '₫' + comm;
+  
+  // Tính tiền
+  const basePrice = 349000;
+  const finalPrice = hasShippingFee ? basePrice + 20000 : basePrice;
+  
+  // Cập nhật số tiền ở ô Doanh thu trên Popup
+  const kpiRevenueEl = document.querySelector('.kpis .kpi:first-child .kpi-v');
+  if (kpiRevenueEl) {
+      kpiRevenueEl.textContent = '₫' + finalPrice.toLocaleString('vi-VN');
+  }
+  
+  // Cập nhật Commission (5% của giá gốc)
+  const comm = Math.round(basePrice * 0.05).toLocaleString('vi-VN');
+  const kpiCommEl = document.getElementById('kpiComm');
+  if (kpiCommEl) {
+      kpiCommEl.textContent = '₫' + comm;
+  }
+
+  // NÂNG CẤP XỊN: Cập nhật luôn chữ "Tổng cộng" ở panel bên phải đằng sau Popup!
+  const rpTotalEl = document.querySelector('.rp-total span:last-child');
+  if (rpTotalEl) {
+      rpTotalEl.textContent = '₫' + finalPrice.toLocaleString('vi-VN');
+  }
+
   showOv('ovSuccess');
 }
 

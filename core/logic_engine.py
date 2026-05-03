@@ -202,18 +202,3 @@ def process_checkout(user_id, warehouse_id, gift_id):
         user, warehouse_id, stock_key, current_stock
     )
     return build_json_response(status, user, gift, current_wh, ranked, is_vip)
-
-
-# ── TEST ──────────────────────────────────────────────────────────
-if __name__ == "__main__":
-    tests = [
-        ("TEST 1 — VIP + còn hàng → SUCCESS",            "USR-VIP-001", "WH-HCM",    "GIFT_A"),
-        ("TEST 2 — VIP + kho khác còn → VIP_SMOOTH",     "USR-VIP-001", "WH-HCM",    "GIFT_B"),
-        ("TEST 3 — Normal + kho khác còn → UPSELL",      "USR-NOR-002", "WH-HCM",    "GIFT_B"),
-        ("TEST 4 — VIP + hết toàn quốc → FALLBACK 100k", "USR-VIP-001", "WH-HCM",    "GIFT_C"),
-        ("TEST 5 — Normal + hết toàn quốc → FALLBACK 50k","USR-NOR-002","WH-HCM",    "GIFT_C"),
-        ("TEST 6 — Normal + còn ở kho hiện tại → SUCCESS","USR-NOR-002","WH-DANANG", "GIFT_B"),
-    ]
-    for title, u, w, g in tests:
-        print(f"\n{'='*55}\n{title}")
-        print(json.dumps(process_checkout(u, w, g), ensure_ascii=False, indent=2))
